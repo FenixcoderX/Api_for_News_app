@@ -1,6 +1,8 @@
 import express, { NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 // Create a new express server
 const app: express.Application = express();
@@ -18,6 +20,18 @@ mongoose
   .catch((err) => {
     console.log(err);
   });
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN,
+  optionsSuccessStatus: 200,
+  credentials: true,
+};
+// Use CORS middleware
+app.use(cors(corsOptions));
+
+// Use cookie parser middleware
+app.use(cookieParser());
 
 // Extracts the entire body portion of an incoming request stream and exposes it on req.body
 app.use(express.json());
