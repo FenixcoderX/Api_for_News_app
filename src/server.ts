@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import authRoutes from './handlers/authHandlers';
 
 // Create a new express server
 const app: express.Application = express();
@@ -46,4 +47,22 @@ app.listen(3001, () => {
   console.log(`starting app on: ${address}`);
 });
 
+// Define routes for the app
+authRoutes(app);
+
 export default app;
+
+interface CustomError extends Error {
+  statusCode: number;
+}
+
+// Error handling middleware, should be the last app.use() call
+app.use((err: CustomError, req: Request, res: Response, next: NextFunction) => {
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  res.status(statusCode).json({
+    success: false,
+    statusCode,
+    message,
+  });
+});
