@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './handlers/authHandlers';
+import newsRoutes from './handlers/newsHandlers';
+import uploadFilesRoutes from './handlers/uploadFilesHandlers';
 
 // Create a new express server
 const app: express.Application = express();
@@ -49,6 +51,8 @@ app.listen(3001, () => {
 
 // Define routes for the app
 authRoutes(app);
+newsRoutes(app);
+uploadFilesRoutes (app);
 
 export default app;
 
