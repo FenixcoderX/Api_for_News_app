@@ -1,4 +1,4 @@
-// Handlers for user routes
+// Handlers for auth routes
 
 import express, { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
@@ -22,7 +22,7 @@ const signup = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password, name } = req.body;
 
   if (!email || !password || !name || email === '' || password === '' || name === '') {
-    next(errorHandler(400, 'All fields are required'));
+    return next(errorHandler(400, 'All fields are required'));
   }
 
   // Destructure the BCRYPT_PASSWORD and SALT_ROUNDS from the process.env object and assign them to the pepper and saltRounds variables
@@ -54,7 +54,7 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
   if (!email || !password || email === '' || password === '') {
-    next(errorHandler(400, 'All fields are required'));
+    return next(errorHandler(400, 'All fields are required'));
   }
 
   try {
