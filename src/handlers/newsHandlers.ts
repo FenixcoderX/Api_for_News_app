@@ -4,6 +4,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import News from '../models/news.model';
 import { verifyAuthToken } from '../middleware/verification';
 import { errorHandler } from '../middleware/error';
+import { notificationNewsCreate } from '../services/notificationNewsCreate';
 
 // Handler functions here
 
@@ -38,13 +39,13 @@ const getAll = async (_req: Request, res: Response, next: NextFunction) => {
 const getAllPublished = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const currentDate = new Date();
-    console.log (currentDate, 'currentDate')
+
 
     // Get all published news from the database
     const publishedNews = await News.find({
       publishDate: { $lte: currentDate }, //$lte means less than or equal to
     });
-    console.log (publishedNews, 'publishedNews')
+
     // Send the published news as a response
     res.status(200).json(publishedNews);
   } catch (err) {
@@ -88,11 +89,12 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
   });
 
   try {
-    // Get all news from the database
+    // Get saved news from the database
     const savedNews = await newNews.save();
-
     // Send the news as a response
     res.status(200).json(savedNews);
+    // Create a notification for each user when a new news is created
+    notificationNewsCreate(savedNews.author.toString(), 'create', savedNews._id.toString(), `"${savedNews.title}" news created`);
   } catch (err) {
     next(err);
   }
@@ -107,7 +109,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
  */
 const updateNews = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
-  const { title, images = [], content, files = [], author, publishDate } = req.body;
+  const { title, images = [], content, files = [], publishDate } = req.body;
   const userId = req.body.decoded.id;
 
   // Find the news item to update
@@ -123,12 +125,13 @@ const updateNews = async (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    const updatedNews = await News.findByIdAndUpdate(id, { title, images, content, files, author, publishDate }, { new: true, runValidators: true });
+    const updatedNews = await News.findByIdAndUpdate(id, { title, images, content, files, publishDate }, { new: true, runValidators: true });
 
     if (!updatedNews) {
       return next(errorHandler(404, 'News not found'));
     }
-
+    // Create a notification for each user when the news is updated
+    notificationNewsCreate(updatedNews.author.toString(), 'update', updatedNews._id.toString(), `"${updatedNews.title}" news updated`);
     res.json(updatedNews);
   } catch (err) {
     next(errorHandler(500, 'Error updating news'));
@@ -159,9 +162,14 @@ const deleteNews = async (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    await News.findByIdAndDelete(id);
+    const deletedNews = await News.findOneAndDelete({ _id: id });
+
+    if (!deletedNews) {
+      return next(errorHandler(404, 'News not found'));
+    }
 
     res.status(200).json('The news has been deleted');
+    notificationNewsCreate(deletedNews.author.toString(), 'delete', deletedNews._id.toString(), `"${deletedNews.title}" news deleted`);
   } catch (err) {
     next(errorHandler(500, 'Error deleting news'));
   }
