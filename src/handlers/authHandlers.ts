@@ -85,7 +85,14 @@ const login = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-const logout = async (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Logs out a user
+ * 
+ * @param {Request} _req - The request object (unused)
+ * @param {Response} res - The response object used to clear the cookie and send the logout confirmation
+ * @param {NextFunction} next - The next function used to pass the error to the error handling middlewares
+ */
+const logout = async (_req: Request, res: Response, next: NextFunction) => {
   try {
     res.clearCookie('access_token',{
       sameSite: 'none',
