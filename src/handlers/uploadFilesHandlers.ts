@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { verifyAuthToken } from '../middleware/verification';
 
 const uploadedFilesDir = 'uploadedFiles';
 
@@ -69,7 +70,7 @@ const uploadFiles = (req: Request, res: Response) => {
  */
 const uploadFilesRoutes = (app: express.Application) => {
   // Route to upload files to the server
-  app.post('/files/upload', uploadFiles);
+  app.post('/files/upload',verifyAuthToken, uploadFiles);
 
   // Route to serve static files
   app.use('/files/static', express.static('uploadedFiles'));
