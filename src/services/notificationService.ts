@@ -19,7 +19,7 @@ export const initializeNotificationStream = () => {
         const notification = change.fullDocument;
         const userId = notification.user_id.toString();
         const socketId = userSocketMap.get(userId);
-        if (socketId) {
+        if (socketId && notification.user_id.toString()!==notification.author.toString()) {
           io.to(socketId).emit('notification', notification);
         }
       }
