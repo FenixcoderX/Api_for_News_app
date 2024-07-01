@@ -11,7 +11,7 @@ import { userSocketMap } from '../server'; // Убедитесь, что пут�
 export const initializeSocket = (io: Server) => {
   // Handle socket connection
   io.on('connection', (socket: Socket) => {
-    console.log('A user connected');
+    //console.log('A user connected');
 
     // Get the token from the cookies
     const cookiesStr = socket.handshake.headers.cookie;
@@ -34,17 +34,17 @@ export const initializeSocket = (io: Server) => {
           userId = decoded.id;
           userSocketMap.set(userId, socket.id);
 
-          console.log(`User ${userId} is authenticated with socket ${socket.id}`);
+         // console.log(`User ${userId} is authenticated with socket ${socket.id}`);
         }
       });
     } else {
-      console.log('No token provided. User disconnected');
+      // console.log('No token provided. User disconnected');
       socket.disconnect();
     }
 
     // Handle socket disconnection
     socket.on('disconnect', () => {
-      console.log('User disconnected');
+      // console.log('User disconnected');
       if (userId) {
         userSocketMap.delete(userId);
       }
