@@ -10,6 +10,7 @@ import newsRoutes from './handlers/newsHandlers';
 import uploadFilesRoutes from './handlers/uploadFilesHandlers';
 import { configureNotificationStream } from './services/notificationService';
 import { initializeSocket } from './controllers/socketController';
+import { startNewsPublishAndNotificationScheduler } from './services/schedulerNewsPublishAndNotification';
 
 
 // Load the environment variables from the .env file into process.env
@@ -57,6 +58,9 @@ app.use(express.json());
 app.get('/', (req: Request, res: Response) => {
   res.send('This is API');
 });
+
+// Start the news publish and notification creation sheduler
+startNewsPublishAndNotificationScheduler();
 
 // Start the Express server with Socket.IO
 server.listen(3001, () => {

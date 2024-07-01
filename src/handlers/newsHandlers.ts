@@ -40,11 +40,8 @@ const getAllPublished = async (_req: Request, res: Response, next: NextFunction)
   try {
     const currentDate = new Date();
 
-
     // Get all published news from the database
-    const publishedNews = await News.find({
-      publishDate: { $lte: currentDate }, //$lte means less than or equal to
-    });
+    const publishedNews = await News.find({ status: 'published' });
 
     // Send the published news as a response
     res.status(200).json(publishedNews);
@@ -61,7 +58,7 @@ const getAllPublished = async (_req: Request, res: Response, next: NextFunction)
  * @param {NextFunction} next - The next function used to pass the error to the error handling middlewares
  */
 const create = async (req: Request, res: Response, next: NextFunction) => {
-  const { title, images = [], content, files = [], author, publishDate } = req.body;
+  const { title, images = [], content, files = [], author, publishDate, status } = req.body;
 
   if (!author || author !== req.body.decoded.id || author === '') {
     return next(errorHandler(401, 'Unauthorized'));
@@ -74,9 +71,6 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
   if (title.length > 100) {
     return next(errorHandler(400, 'Title should not exceed 100 characters'));
   }
-  if (content.length > 400) {
-    return next(errorHandler(400, 'News length should not exceed 400 characters'));
-  }
 
   // Create a new News
   const newNews = new News({
@@ -86,6 +80,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
     files,
     author,
     publishDate,
+    status,
   });
 
   try {
@@ -94,7 +89,9 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
     // Send the news as a response
     res.status(200).json(savedNews);
     // Create a notification for each user when a new news is created
-    notificationNewsCreate(savedNews.author.toString(), 'create', savedNews._id.toString(), `"${savedNews.title}" news created`);
+    if (savedNews.status === 'published') {
+      notificationNewsCreate(savedNews.author.toString(), 'create', savedNews._id.toString(), `"${savedNews.title}" news created`);
+    }
   } catch (err) {
     next(err);
   }
@@ -109,7 +106,7 @@ const create = async (req: Request, res: Response, next: NextFunction) => {
  */
 const updateNews = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
-  const { title, images = [], content, files = [], publishDate } = req.body;
+  const { title, images = [], content, files = [], publishDate, status } = req.body;
   const userId = req.body.decoded.id;
 
   // Find the news item to update
@@ -121,17 +118,22 @@ const updateNews = async (req: Request, res: Response, next: NextFunction) => {
 
   // Check that the user is the author of the news
   if (newsItem.author.toString() !== userId) {
-    return next(errorHandler(403, 'You are not allowed to delete this news'));
+    return next(errorHandler(403, 'You are not allowed to update this news'));
   }
 
   try {
-    const updatedNews = await News.findByIdAndUpdate(id, { title, images, content, files, publishDate }, { new: true, runValidators: true });
+    const updatedNews = await News.findByIdAndUpdate(id, { title, images, content, files, publishDate, status }, { new: true, runValidators: true });
 
     if (!updatedNews) {
       return next(errorHandler(404, 'News not found'));
     }
     // Create a notification for each user when the news is updated
-    notificationNewsCreate(updatedNews.author.toString(), 'update', updatedNews._id.toString(), `"${updatedNews.title}" news updated`);
+    if (updatedNews.status === 'published' && newsItem.status !== 'published') {
+      notificationNewsCreate(updatedNews.author.toString(), 'update', updatedNews._id.toString(), `"${updatedNews.title}" news updated`);
+    }
+    if (updatedNews.status === 'published' && newsItem.status !== 'draft') {
+      notificationNewsCreate(updatedNews.author.toString(), 'update', updatedNews._id.toString(), `"${updatedNews.title}" news created`);
+    }
     res.json(updatedNews);
   } catch (err) {
     next(errorHandler(500, 'Error updating news'));
@@ -169,7 +171,9 @@ const deleteNews = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     res.status(200).json('The news has been deleted');
-    notificationNewsCreate(deletedNews.author.toString(), 'delete', deletedNews._id.toString(), `"${deletedNews.title}" news deleted`);
+    if (deletedNews.status === 'published') {
+      notificationNewsCreate(deletedNews.author.toString(), 'delete', deletedNews._id.toString(), `"${deletedNews.title}" news deleted`);
+    }
   } catch (err) {
     next(errorHandler(500, 'Error deleting news'));
   }
